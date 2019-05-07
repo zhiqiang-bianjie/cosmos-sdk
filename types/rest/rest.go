@@ -224,24 +224,9 @@ func PostProcessResponse(w http.ResponseWriter, cdc *codec.Codec, response inter
 // ParseHTTPArgs parses the request's URL and returns a slice containing all arguments pairs.
 // It separates page and limit used for pagination
 func ParseHTTPArgs(r *http.Request) (tags []string, page, limit int, err error) {
-	tags = make([]string, 0, len(r.Form))
-	for key, values := range r.Form {
-		if key == "page" || key == "limit" {
-			continue
-		}
-		var value string
-		value, err = url.QueryUnescape(values[0])
-		if err != nil {
-			return tags, page, limit, err
-		}
-
-		var tag string
-		if key == types.TxHeightKey {
-			tag = fmt.Sprintf("%s=%s", key, value)
-		} else {
-			tag = fmt.Sprintf("%s='%s'", key, value)
-		}
-		tags = append(tags, tag)
+	tags, err = tagsFromFormValues(r.Form)
+	if err != nil {
+		return tags, page, limit, err
 	}
 
 	pageStr := r.FormValue("page")
@@ -269,4 +254,27 @@ func ParseHTTPArgs(r *http.Request) (tags []string, page, limit int, err error) 
 	}
 
 	return tags, page, limit, nil
+}
+
+func tagsFromFormValues(values url.Values) ([]string, error) {
+	tags := make([]string, 0, len(values))
+	for key, values := range values {
+		if key == "page" || key == "limit" {
+			continue
+		}
+		var value string
+		value, err := url.QueryUnescape(values[0])
+		if err != nil {
+			return tags, err
+		}
+
+		var tag string
+		if key == types.TxHeightKey {
+			tag = fmt.Sprintf("%s=%s", key, value)
+		} else {
+			tag = fmt.Sprintf("%s='%s'", key, value)
+		}
+		tags = append(tags, tag)
+	}
+	return tags, nil
 }

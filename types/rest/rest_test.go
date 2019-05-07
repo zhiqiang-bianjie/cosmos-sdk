@@ -66,6 +66,7 @@ func TestParseHTTPArgs(t *testing.T) {
 	reqE1 := mustNewRequest(t, "", "/?page=-1", nil)
 	reqE2 := mustNewRequest(t, "", "/?limit=-1", nil)
 	req4 := mustNewRequest(t, "", "/?foo=faa", nil)
+	req5 := mustNewRequest(t, "", "/?foo=faa&tx.height=5", nil)
 
 	tests := []struct {
 		name  string
@@ -85,6 +86,7 @@ func TestParseHTTPArgs(t *testing.T) {
 		{"error limit 0", reqE2, httptest.NewRecorder(), []string{}, DefaultPage, DefaultLimit, true},
 
 		{"tags", req4, httptest.NewRecorder(), []string{"foo='faa'"}, DefaultPage, DefaultLimit, false},
+		{"txheight", req5, httptest.NewRecorder(), []string{"foo='faa'", "tx.height=5"}, DefaultPage, DefaultLimit, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
