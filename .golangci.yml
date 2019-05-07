@@ -3,6 +3,7 @@ linters:
   enable:
     - errcheck
     - golint
+    - gocyclo
     - ineffassign
     - unconvert
     - misspell
