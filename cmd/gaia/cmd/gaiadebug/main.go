@@ -91,16 +91,11 @@ func runRawBytesCmd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runPubKeyCmd(cmd *cobra.Command, args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("Expected single arg")
-	}
-
-	pubkeyString := args[0]
+func tryDecodePubkeyString(pubkeyString string) ([]byte, crypto.PubKey, error) {
 	var pubKeyI crypto.PubKey
+	pubkeyBytes, err := hex.DecodeString(pubkeyString)
 
 	// try hex, then base64, then bech32
-	pubkeyBytes, err := hex.DecodeString(pubkeyString)
 	if err != nil {
 		var err2 error
 		pubkeyBytes, err2 = base64.StdEncoding.DecodeString(pubkeyString)
@@ -115,19 +110,32 @@ func runPubKeyCmd(cmd *cobra.Command, args []string) error {
 					var err5 error
 					pubKeyI, err5 = sdk.GetConsPubKeyBech32(pubkeyString)
 					if err5 != nil {
-						return fmt.Errorf(`Expected hex, base64, or bech32. Got errors:
-								hex: %v,
-								base64: %v
-								bech32 Acc: %v
-								bech32 Val: %v
-								bech32 Cons: %v`,
-							err, err2, err3, err4, err5)
+						return nil, nil, fmt.Errorf(`Expected hex, base64, or bech32. Got errors:
+hex: %v,
+base64: %v
+bech32 Acc: %v
+bech32 Val: %v
+bech32 Cons: %v`, err, err2, err3, err4, err5)
 					}
 
 				}
 			}
 
 		}
+	}
+
+	return pubkeyBytes, pubKeyI, nil
+}
+
+func runPubKeyCmd(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("Expected single arg")
+	}
+
+	pubkeyString := args[0]
+	pubkeyBytes, pubKeyI, err := tryDecodePubkeyString(pubkeyString)
+	if err != nil {
+		return err
 	}
 
 	var pubKey ed25519.PubKeyEd25519
