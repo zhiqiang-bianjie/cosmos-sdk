@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"os"
@@ -92,41 +93,31 @@ func runAddCmd(_ *cobra.Command, args []string) error {
 	interactive := viper.GetBool(flagInteractive)
 	showMnemonic := !viper.GetBool(flagNoBackup)
 
-	if viper.GetBool(flagDryRun) {
-		// we throw this away, so don't enforce args,
-		// we want to get a new random seed phrase quickly
-		kb = keys.NewInMemory()
-		encryptPassword = client.DefaultKeyPass
-	} else {
+	// we throw this away, so don't enforce args,
+	// we want to get a new random seed phrase quickly
+	kb = keys.NewInMemory()
+	encryptPassword = client.DefaultKeyPass
+
+	if !viper.GetBool(flagDryRun) {
 		kb, err = NewKeyBaseFromHomeFlag()
 		if err != nil {
 			return err
 		}
 
-		_, err = kb.Get(name)
-		if err == nil {
-			// account exists, ask for user confirmation
-			if response, err2 := client.GetConfirmation(
-				fmt.Sprintf("override the existing name %s", name), buf); err2 != nil || !response {
-				return err2
-			}
+		if err := ensureCanCreateKey(kb, buf, name); err != nil {
+			return err
 		}
 
 		multisigKeys := viper.GetStringSlice(flagMultisig)
 		if len(multisigKeys) != 0 {
-			var pks []crypto.PubKey
-
 			multisigThreshold := viper.GetInt(flagMultiSigThreshold)
 			if err := validateMultisigThreshold(multisigThreshold, len(multisigKeys)); err != nil {
 				return err
 			}
 
-			for _, keyname := range multisigKeys {
-				k, err := kb.Get(keyname)
-				if err != nil {
-					return err
-				}
-				pks = append(pks, k.GetPubKey())
+			pks, err := getMultiKeys(kb, multisigKeys)
+			if err != nil {
+				return err
 			}
 
 			// Handle --nosort
@@ -183,23 +174,9 @@ func runAddCmd(_ *cobra.Command, args []string) error {
 	}
 
 	// Get bip39 mnemonic
-	var mnemonic string
-	var bip39Passphrase string
-
-	if interactive || viper.GetBool(flagRecover) {
-		bip39Message := "Enter your bip39 mnemonic"
-		if !viper.GetBool(flagRecover) {
-			bip39Message = "Enter your bip39 mnemonic, or hit enter to generate one."
-		}
-
-		mnemonic, err = client.GetString(bip39Message, buf)
-		if err != nil {
-			return err
-		}
-
-		if !bip39.IsMnemonicValid(mnemonic) {
-			return errors.New("invalid mnemonic")
-		}
+	mnemonic, err := readMnemonicIfInteractiveOrRecover(buf, interactive, viper.GetBool(flagRecover))
+	if err != nil {
+		return err
 	}
 
 	if len(mnemonic) == 0 {
@@ -216,6 +193,7 @@ func runAddCmd(_ *cobra.Command, args []string) error {
 	}
 
 	// override bip39 passphrase
+	var bip39Passphrase string
 	if interactive {
 		bip39Passphrase, err = client.GetString(
 			"Enter your bip39 passphrase. This is combined with the mnemonic to derive the seed. "+
@@ -250,6 +228,55 @@ func runAddCmd(_ *cobra.Command, args []string) error {
 	}
 
 	return printCreate(info, showMnemonic, mnemonic)
+}
+
+func ensureCanCreateKey(kb keys.Keybase, buf *bufio.Reader, name string) error {
+	if _, err := kb.Get(name); err != nil {
+		// key doesn't exist, go ahead
+		return nil
+	}
+
+	// account exists, ask for user confirmation
+	if response, err := client.GetConfirmation(
+		fmt.Sprintf("override the existing name %s", name), buf); err != nil || !response {
+		return err
+	}
+
+	return nil
+}
+
+func getMultiKeys(kb keys.Keybase, keys []string) ([]crypto.PubKey, error) {
+	var pks []crypto.PubKey
+	for _, keyname := range keys {
+		k, err := kb.Get(keyname)
+		if err != nil {
+			return nil, err
+		}
+		pks = append(pks, k.GetPubKey())
+	}
+	return pks, nil
+}
+
+func readMnemonicIfInteractiveOrRecover(buf *bufio.Reader, interactive, recover bool) (string, error) {
+	if !(interactive || !recover) {
+		return "", nil
+	}
+
+	bip39Message := "Enter your bip39 mnemonic"
+	if !recover {
+		bip39Message = "Enter your bip39 mnemonic, or hit enter to generate one."
+	}
+
+	mnemonic, err := client.GetString(bip39Message, buf)
+	if err != nil {
+		return "", err
+	}
+
+	if !bip39.IsMnemonicValid(mnemonic) {
+		return "", errors.New("invalid mnemonic")
+	}
+
+	return mnemonic, nil
 }
 
 func printCreate(info keys.Info, showMnemonic bool, mnemonic string) error {

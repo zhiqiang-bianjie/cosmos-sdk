@@ -122,40 +122,7 @@ func RandomRequestBeginBlock(r *rand.Rand, params Params,
 		}
 	}
 
-	voteInfos := make([]abci.VoteInfo, len(validators))
-	for i, key := range validators.getKeys() {
-		mVal := validators[key]
-		mVal.livenessState = params.LivenessTransitionMatrix.NextState(r, mVal.livenessState)
-		signed := true
-
-		if mVal.livenessState == 1 {
-			// spotty connection, 50% probability of success
-			// See https://github.com/golang/go/issues/23804#issuecomment-365370418
-			// for reasoning behind computing like this
-			signed = r.Int63()%2 == 0
-		} else if mVal.livenessState == 2 {
-			// offline
-			signed = false
-		}
-
-		if signed {
-			event("beginblock/signing/signed")
-		} else {
-			event("beginblock/signing/missed")
-		}
-
-		pubkey, err := tmtypes.PB2TM.PubKey(mVal.val.PubKey)
-		if err != nil {
-			panic(err)
-		}
-		voteInfos[i] = abci.VoteInfo{
-			Validator: abci.Validator{
-				Address: pubkey.Address(),
-				Power:   mVal.val.Power,
-			},
-			SignedLastBlock: signed,
-		}
-	}
+	voteInfos := makeVoteInfos(r, validators, params, event)
 
 	// return if no past times
 	if len(pastTimes) <= 0 {
@@ -207,4 +174,45 @@ func RandomRequestBeginBlock(r *rand.Rand, params Params,
 		},
 		ByzantineValidators: evidence,
 	}
+}
+
+func makeVoteInfos(r *rand.Rand, validators mockValidators,
+	params Params, event func(string)) []abci.VoteInfo {
+
+	voteInfos := make([]abci.VoteInfo, len(validators))
+	for i, key := range validators.getKeys() {
+		mVal := validators[key]
+		mVal.livenessState = params.LivenessTransitionMatrix.NextState(r, mVal.livenessState)
+		signed := true
+
+		if mVal.livenessState == 1 {
+			// spotty connection, 50% probability of success
+			// See https://github.com/golang/go/issues/23804#issuecomment-365370418
+			// for reasoning behind computing like this
+			signed = r.Int63()%2 == 0
+		} else if mVal.livenessState == 2 {
+			// offline
+			signed = false
+		}
+
+		if signed {
+			event("beginblock/signing/signed")
+		} else {
+			event("beginblock/signing/missed")
+		}
+
+		pubkey, err := tmtypes.PB2TM.PubKey(mVal.val.PubKey)
+		if err != nil {
+			panic(err)
+		}
+		voteInfos[i] = abci.VoteInfo{
+			Validator: abci.Validator{
+				Address: pubkey.Address(),
+				Power:   mVal.val.Power,
+			},
+			SignedLastBlock: signed,
+		}
+	}
+
+	return voteInfos
 }
