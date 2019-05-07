@@ -196,57 +196,78 @@ func (st *Store) Query(req abci.RequestQuery) (res abci.ResponseQuery) {
 
 	switch req.Path {
 	case "/key": // get by key
-		key := req.Data // data holds the key bytes
-
-		res.Key = key
-		if !st.VersionExists(res.Height) {
-			res.Log = cmn.ErrorWrap(iavl.ErrVersionDoesNotExist, "").Error()
-			break
-		}
-
-		if req.Prove {
-			value, proof, err := tree.GetVersionedWithProof(key, res.Height)
-			if err != nil {
-				res.Log = err.Error()
-				break
-			}
-			if proof == nil {
-				// Proof == nil implies that the store is empty.
-				if value != nil {
-					panic("unexpected value for an empty proof")
-				}
-			}
-			if value != nil {
-				// value was found
-				res.Value = value
-				res.Proof = &merkle.Proof{Ops: []merkle.ProofOp{iavl.NewIAVLValueOp(key, proof).ProofOp()}}
-			} else {
-				// value wasn't found
-				res.Value = nil
-				res.Proof = &merkle.Proof{Ops: []merkle.ProofOp{iavl.NewIAVLAbsenceOp(key, proof).ProofOp()}}
-			}
-		} else {
-			_, res.Value = tree.GetVersioned(key, res.Height)
-		}
+		return st.handleQueryKey(req)
 
 	case "/subspace":
-		var KVs []types.KVPair
-
-		subspace := req.Data
-		res.Key = subspace
-
-		iterator := types.KVStorePrefixIterator(st, subspace)
-		for ; iterator.Valid(); iterator.Next() {
-			KVs = append(KVs, types.KVPair{Key: iterator.Key(), Value: iterator.Value()})
-		}
-
-		iterator.Close()
-		res.Value = cdc.MustMarshalBinaryLengthPrefixed(KVs)
+		return st.handleQuerySubspace(req)
 
 	default:
 		msg := fmt.Sprintf("Unexpected Query path: %v", req.Path)
 		return errors.ErrUnknownRequest(msg).QueryResult()
 	}
+}
+
+func (st *Store) handleQueryKey(req abci.RequestQuery) (res abci.ResponseQuery) {
+	tree := st.tree
+
+	// store the height we chose in the response, with 0 being changed to the
+	// latest height
+	res.Height = getHeight(tree, req)
+
+	key := req.Data // data holds the key bytes
+
+	res.Key = key
+	if !st.VersionExists(res.Height) {
+		res.Log = cmn.ErrorWrap(iavl.ErrVersionDoesNotExist, "").Error()
+		return
+	}
+
+	if req.Prove {
+		value, proof, err := tree.GetVersionedWithProof(key, res.Height)
+		if err != nil {
+			res.Log = err.Error()
+			return
+		}
+		if proof == nil {
+			// Proof == nil implies that the store is empty.
+			if value != nil {
+				panic("unexpected value for an empty proof")
+			}
+		}
+		if value != nil {
+			// value was found
+			res.Value = value
+			res.Proof = &merkle.Proof{Ops: []merkle.ProofOp{iavl.NewIAVLValueOp(key, proof).ProofOp()}}
+		} else {
+			// value wasn't found
+			res.Value = nil
+			res.Proof = &merkle.Proof{Ops: []merkle.ProofOp{iavl.NewIAVLAbsenceOp(key, proof).ProofOp()}}
+		}
+	} else {
+		_, res.Value = tree.GetVersioned(key, res.Height)
+	}
+
+	return
+}
+
+func (st *Store) handleQuerySubspace(req abci.RequestQuery) (res abci.ResponseQuery) {
+	tree := st.tree
+
+	// store the height we chose in the response, with 0 being changed to the
+	// latest height
+	res.Height = getHeight(tree, req)
+
+	subspace := req.Data
+	res.Key = subspace
+
+	var KVs []types.KVPair
+	iterator := types.KVStorePrefixIterator(st, subspace)
+	for ; iterator.Valid(); iterator.Next() {
+		KVs = append(KVs, types.KVPair{Key: iterator.Key(), Value: iterator.Value()})
+	}
+
+	iterator.Close()
+	res.Value = cdc.MustMarshalBinaryLengthPrefixed(KVs)
 
 	return
 }
