@@ -3,7 +3,7 @@ package auth
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk"
 )
 
 // GenesisState - all auth state that must be provided at genesis

@@ -1,7 +1,7 @@
 package crisis
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk"
 )
 
 // GenesisState - crisis genesis state

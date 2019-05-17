@@ -1,7 +1,7 @@
 package tags
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk"
 )
 
 // Tag keys and values

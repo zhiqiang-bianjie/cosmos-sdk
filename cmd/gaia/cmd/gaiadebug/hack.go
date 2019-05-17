@@ -18,7 +18,7 @@ import (
 
 	"github.com/tendermint/tendermint/libs/log"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk"
 
 	gaia "github.com/cosmos/cosmos-sdk/cmd/gaia/app"
 )

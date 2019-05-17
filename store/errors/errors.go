@@ -1,7 +1,7 @@
 package errors
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk"
 )
 
 // nolint - reexport

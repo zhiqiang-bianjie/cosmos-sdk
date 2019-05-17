@@ -3,7 +3,7 @@ package context
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk"
 )
 
 // ErrInvalidAccount returns a standardized error reflecting that a given

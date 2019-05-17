@@ -1,7 +1,7 @@
 package distribution
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk"
 
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"

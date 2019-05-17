@@ -5,7 +5,7 @@ import (
 
 	dbm "github.com/tendermint/tendermint/libs/db"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk"
 )
 
 var _ sdk.MultiStore = multiStore{}

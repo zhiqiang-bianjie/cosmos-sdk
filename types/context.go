@@ -15,17 +15,15 @@ import (
 	stypes "github.com/cosmos/cosmos-sdk/store/types"
 )
 
-/*
-The intent of Context is for it to be an immutable object that can be
-cloned and updated cheaply with WithValue() and passed forward to the
-next decorator or handler. For example,
-
- func MsgHandler(ctx Context, tx Tx) Result {
- 	...
- 	ctx = ctx.WithValue(key, value)
- 	...
- }
-*/
+//The intent of Context is for it to be an immutable object that can be
+//cloned and updated cheaply with WithValue() and passed forward to the
+//next decorator or handler. For example,
+//
+// func MsgHandler(ctx Context, tx Tx) Result {
+//     ...
+//     ctx = ctx.WithValue(key, value)
+//     ...
+// }
 type Context struct {
 	context.Context
 	pst *thePast

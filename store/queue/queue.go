@@ -4,7 +4,7 @@ package store
 /*
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk"
 
 	"github.com/cosmos/cosmos-sdk/store/list"
 )
