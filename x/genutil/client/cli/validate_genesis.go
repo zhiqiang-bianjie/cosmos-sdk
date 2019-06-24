@@ -3,7 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -29,8 +28,6 @@ func ValidateGenesisCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicM
 				genesis = args[0]
 			}
 
-			fmt.Fprintf(os.Stderr, "validating genesis file at %s\n", genesis)
-
 			var genDoc *tmtypes.GenesisDoc
 			if genDoc, err = tmtypes.GenesisDocFromFile(genesis); err != nil {
 				return fmt.Errorf("error loading genesis doc from %s: %s", genesis, err.Error())
@@ -47,7 +44,7 @@ func ValidateGenesisCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicM
 
 			// TODO test to make sure initchain doesn't panic
 
-			fmt.Printf("File at %s is a valid genesis file\n", genesis)
+			cmd.PrintErrf("File at %s is a valid genesis file.\n", genesis)
 			return nil
 		},
 	}

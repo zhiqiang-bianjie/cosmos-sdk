@@ -45,13 +45,13 @@ func newPrintInfo(moniker, chainID, nodeID, genTxsDir string,
 	}
 }
 
-func displayInfo(cdc *codec.Codec, info printInfo) error {
+func displayInfo(cmd *cobra.Command, cdc *codec.Codec, info printInfo) error {
 	out, err := codec.MarshalJSONIndent(cdc, info)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "%s\n", string(out)) // nolint: errcheck
+	cmd.PrintErrln(string(out))
 	return nil
 }
 
@@ -64,7 +64,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 		Short: "Initialize private validator, p2p, genesis, and application configuration files",
 		Long:  `Initialize validators's and node's configuration files.`,
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			config := ctx.Config
 			config.SetRoot(viper.GetString(cli.HomeFlag))
 
@@ -111,7 +111,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			toPrint := newPrintInfo(config.Moniker, chainID, nodeID, "", appState)
 
 			cfg.WriteConfigFile(filepath.Join(config.RootDir, "config", "config.toml"), config)
-			return displayInfo(cdc, toPrint)
+			return displayInfo(cmd, cdc, toPrint)
 		},
 	}
 

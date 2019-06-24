@@ -4,12 +4,10 @@ package server
 
 import (
 	"fmt"
-	"os"
+	"io/ioutil"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"io/ioutil"
 
 	dbm "github.com/tendermint/tendermint/libs/db"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -41,16 +39,13 @@ func ExportCmd(ctx *Context, cdc *codec.Codec, appExporter AppExporter) *cobra.C
 			}
 
 			if isEmptyState(db) || appExporter == nil {
-				if _, err := fmt.Fprintln(os.Stderr, "WARNING: State is not initialized. Returning genesis file."); err != nil {
-					return err
-				}
-
+				cmd.PrintErrln("State is not initialized. Returning genesis file.")
 				genesis, err := ioutil.ReadFile(config.GenesisFile())
 				if err != nil {
 					return err
 				}
 
-				fmt.Println(string(genesis))
+				cmd.Println(string(genesis))
 				return nil
 			}
 
@@ -81,7 +76,7 @@ func ExportCmd(ctx *Context, cdc *codec.Codec, appExporter AppExporter) *cobra.C
 				return err
 			}
 
-			fmt.Println(string(encoded))
+			cmd.Println(string(encoded))
 			return nil
 		},
 	}
