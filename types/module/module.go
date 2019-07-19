@@ -139,6 +139,8 @@ type AppModule interface {
 	QuerierRoute() string
 	NewQuerierHandler() sdk.Querier
 
+	Ante(sdk.Context)
+
 	BeginBlock(sdk.Context, abci.RequestBeginBlock)
 	EndBlock(sdk.Context, abci.RequestEndBlock) []abci.ValidatorUpdate
 }
@@ -170,6 +172,9 @@ func (GenesisOnlyAppModule) QuerierRoute() string { return "" }
 
 // module querier
 func (gam GenesisOnlyAppModule) NewQuerierHandler() sdk.Querier { return nil }
+
+// module begin-block
+func (gam GenesisOnlyAppModule) Ante(ctx sdk.Context, sdk.Tx) {}
 
 // module begin-block
 func (gam GenesisOnlyAppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {}
