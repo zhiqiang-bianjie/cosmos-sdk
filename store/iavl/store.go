@@ -23,7 +23,8 @@ const (
 
 // LoadStore loads the iavl store
 func LoadStore(db dbm.DB, id types.CommitID, pruning types.PruningOptions, lazyLoading bool) (types.CommitStore, error) {
-	tree := iavl.NewMutableTree(db, defaultIAVLCacheSize)
+	opts := iavl.PruningOptions(10000, 100)
+	tree := iavl.NewMutableTreeWithOpts(db, dbm.NewMemDB(), defaultIAVLCacheSize, opts)
 
 	var err error
 	if lazyLoading {
@@ -105,18 +106,6 @@ func (st *Store) Commit() types.CommitID {
 	if err != nil {
 		// TODO: Do we want to extend Commit to allow returning errors?
 		panic(err)
-	}
-
-	// Release an old version of history, if not a sync waypoint.
-	previous := version - 1
-	if st.numRecent < previous {
-		toRelease := previous - st.numRecent
-		if st.storeEvery == 0 || toRelease%st.storeEvery != 0 {
-			err := st.tree.DeleteVersion(toRelease)
-			if err != nil && err.(cmn.Error).Data() != iavl.ErrVersionDoesNotExist {
-				panic(err)
-			}
-		}
 	}
 
 	return types.CommitID{
