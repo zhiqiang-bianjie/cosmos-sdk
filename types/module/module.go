@@ -139,7 +139,7 @@ type AppModule interface {
 	QuerierRoute() string
 	NewQuerierHandler() sdk.Querier
 
-	Ante(sdk.Context)
+	Ante(sdk.Context, sdk.Tx) (abort bool)
 
 	BeginBlock(sdk.Context, abci.RequestBeginBlock)
 	EndBlock(sdk.Context, abci.RequestEndBlock) []abci.ValidatorUpdate
@@ -211,6 +211,7 @@ func NewManager(modules ...AppModule) *Manager {
 		OrderExportGenesis: modulesStr,
 		OrderBeginBlockers: modulesStr,
 		OrderEndBlockers:   modulesStr,
+		OrderAnte: modulesStr,
 	}
 }
 
@@ -234,7 +235,12 @@ func (m *Manager) SetOrderEndBlockers(moduleNames ...string) {
 	m.OrderEndBlockers = moduleNames
 }
 
-// register all module routes and module querier routes
+// set the order of set begin-blocker calls
+func (m *Manager) SetOrderAnte(moduleNames ...string) {
+	m.OrderAnte = moduleNames
+}
+
+// register all module invariants
 func (m *Manager) RegisterInvariants(ir sdk.InvariantRegistry) {
 	for _, module := range m.Modules {
 		module.RegisterInvariants(ir)
@@ -325,6 +331,23 @@ func (m *Manager) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) abci.Respo
 		ValidatorUpdates: validatorUpdates,
 		Events:           ctx.EventManager().ABCIEvents(),
 	}
+}
+
+
+// EndBlock performs end block functionality for all modules. It creates a
+// child context with an event manager to aggregate events emitted from all
+// modules.
+func (m *Manager) Ante(ctx sdk.Context, tx sdk.Tx) (newCtx sdk.Context, res sdk.Result, abort bool) {
+	ctx = ctx.WithEventManager(sdk.NewEventManager())
+
+	for _, moduleName := range m.OrderAnte {
+		newctx, res, abort := m.Modules[moduleName].Ante(ctx, tx)
+		if abort {
+			return
+		} 
+	}
+
+	return
 }
 
 // DONTCOVER
