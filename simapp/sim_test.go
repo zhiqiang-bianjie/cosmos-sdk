@@ -43,7 +43,7 @@ func init() {
 	flag.StringVar(&exportParamsPath, "ExportParamsPath", "", "custom file path to save the exported params JSON")
 	flag.IntVar(&exportParamsHeight, "ExportParamsHeight", 0, "height to which export the randomly generated params")
 	flag.StringVar(&exportStatePath, "ExportStatePath", "", "custom file path to save the exported app state JSON")
-	flag.Int64Var(&seed, "Seed", 43, "simulation random seed")
+	flag.Int64Var(&seed, "Seed", 53, "simulation random seed")
 	flag.IntVar(&numBlocks, "NumBlocks", 500, "number of blocks")
 	flag.IntVar(&blockSize, "BlockSize", 200, "operations per block")
 	flag.BoolVar(&enabled, "Enabled", false, "enable the simulation")
