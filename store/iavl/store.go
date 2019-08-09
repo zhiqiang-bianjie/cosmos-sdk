@@ -23,7 +23,7 @@ const (
 
 // LoadStore loads the iavl store
 func LoadStore(db dbm.DB, id types.CommitID, pruning types.PruningOptions, lazyLoading bool) (types.CommitStore, error) {
-	opts := iavl.PruningOptions(pruning.KeepEvery(), pruning.KeepRecent())
+	opts := iavl.PruningOptions(5, 2)
 	tree := iavl.NewMutableTreeWithOpts(db, dbm.NewMemDB(), defaultIAVLCacheSize, opts)
 
 	var err error
