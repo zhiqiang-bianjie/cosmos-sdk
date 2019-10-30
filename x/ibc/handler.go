@@ -17,26 +17,26 @@ func NewHandler(k Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		// IBC client msgs
 		case client.MsgCreateClient:
-			return client.HandleMsgCreateClient(ctx, k.ClientKeeper, msg)
+			return k.CreateClient(ctx, msg)
 
 		case client.MsgUpdateClient:
-			return client.HandleMsgUpdateClient(ctx, k.ClientKeeper, msg)
+			return k.UpdateClient(ctx, msg)
 
 		case client.MsgSubmitMisbehaviour:
-			return client.HandleMsgSubmitMisbehaviour(ctx, k.ClientKeeper, msg)
+			return k.SubmitMisbehaviour(ctx, msg)
 
 		// IBC connection  msgs
 		case connection.MsgConnectionOpenInit:
-			return connection.HandleMsgConnectionOpenInit(ctx, k.ConnectionKeeper, msg)
+			return k.ConnOpenInit(ctx, msg)
 
 		case connection.MsgConnectionOpenTry:
-			return connection.HandleMsgConnectionOpenTry(ctx, k.ConnectionKeeper, msg)
+			return k.ConnOpenTry(ctx, msg)
 
 		case connection.MsgConnectionOpenAck:
-			return connection.HandleMsgConnectionOpenAck(ctx, k.ConnectionKeeper, msg)
+			return k.ConnOpenAck(ctx, msg)
 
 		case connection.MsgConnectionOpenConfirm:
-			return connection.HandleMsgConnectionOpenConfirm(ctx, k.ConnectionKeeper, msg)
+			return k.ConnOpenConfirm(ctx, msg)
 
 			// // IBC channel msgs
 			// case channel.MsgChannelOpenInit:
@@ -59,7 +59,7 @@ func NewHandler(k Keeper) sdk.Handler {
 
 		// IBC transfer msgs
 		case transfer.MsgTransfer:
-			return transfer.HandleMsgTransfer(ctx, k.TransferKeeper, msg)
+			return k.Transfer(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized IBC message type: %T", msg)

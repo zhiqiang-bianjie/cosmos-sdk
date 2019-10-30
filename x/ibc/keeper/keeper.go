@@ -8,6 +8,7 @@ import (
 	channel "github.com/cosmos/cosmos-sdk/x/ibc/04-channel"
 	port "github.com/cosmos/cosmos-sdk/x/ibc/05-port"
 	transfer "github.com/cosmos/cosmos-sdk/x/ibc/20-transfer"
+	handler "github.com/cosmos/cosmos-sdk/x/ibc/25-handler"
 )
 
 // Keeper defines each ICS keeper for IBC
@@ -17,6 +18,7 @@ type Keeper struct {
 	ChannelKeeper    channel.Keeper
 	PortKeeper       port.Keeper
 	TransferKeeper   transfer.Keeper
+	handler.Handler
 }
 
 // NewKeeper creates a new ibc Keeper
@@ -30,11 +32,21 @@ func NewKeeper(
 	channelKeeper := channel.NewKeeper(cdc, key, codespace, clientKeeper, connectionKeeper, portKeeper)
 	transferKeeper := transfer.NewKeeper(cdc, key, codespace, clientKeeper, connectionKeeper, channelKeeper, bk, sk)
 
+	chanHandler := channel.NewHandler(channelKeeper)
+
+	handler := handler.NewHManager().
+		WithClientHandler(client.NewHandler(clientKeeper)).
+		WithConnectionHandler(connection.NewHandler(connectionKeeper)).
+		WithChannelHandler(chanHandler).
+		WithPacketHandler(chanHandler).
+		WithTransferHandler(transfer.NewHandler(transferKeeper))
+
 	return Keeper{
 		ClientKeeper:     clientKeeper,
 		ConnectionKeeper: connectionKeeper,
 		ChannelKeeper:    channelKeeper,
 		PortKeeper:       portKeeper,
 		TransferKeeper:   transferKeeper,
+		Handler:          handler,
 	}
 }

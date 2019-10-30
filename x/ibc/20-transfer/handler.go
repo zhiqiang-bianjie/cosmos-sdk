@@ -5,9 +5,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/ibc/20-transfer/types"
 )
 
+type Handler struct {
+	k Keeper
+}
+
+func NewHandler(k Keeper) Handler {
+	return Handler{k}
+}
+
 // HandleMsgTransfer defines the sdk.Handler for MsgTransfer
-func HandleMsgTransfer(ctx sdk.Context, k Keeper, msg MsgTransfer) (res sdk.Result) {
-	err := k.SendTransfer(ctx, msg.SourcePort, msg.SourceChannel, msg.Amount, msg.Sender, msg.Receiver, msg.Source)
+func (h Handler) Transfer(ctx sdk.Context, msg MsgTransfer) (res sdk.Result) {
+	err := h.k.SendTransfer(ctx, msg.SourcePort, msg.SourceChannel, msg.Amount, msg.Sender, msg.Receiver, msg.Source)
 	if err != nil {
 		return sdk.ResultFromError(err)
 	}

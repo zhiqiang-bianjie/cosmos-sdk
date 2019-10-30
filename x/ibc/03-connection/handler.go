@@ -4,11 +4,20 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/ibc/03-connection/keeper"
 	"github.com/cosmos/cosmos-sdk/x/ibc/03-connection/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-// HandleMsgConnectionOpenInit defines the sdk.Handler for MsgConnectionOpenInit
-func HandleMsgConnectionOpenInit(ctx sdk.Context, k keeper.Keeper, msg types.MsgConnectionOpenInit) sdk.Result {
-	err := k.ConnOpenInit(ctx, msg.ConnectionID, msg.ClientID, msg.Counterparty)
+type Handler struct {
+	k keeper.Keeper
+}
+
+func NewHandler(k Keeper) Handler {
+	return Handler{k}
+}
+
+// ConnOpenInit defines the sdk.Handler for MsgConnectionOpenInit
+func (h Handler) ConnOpenInit(ctx sdk.Context, msg types.MsgConnectionOpenInit) sdk.Result {
+	err := h.k.ConnOpenInit(ctx, msg.ConnectionID, msg.ClientID, msg.Counterparty)
 	if err != nil {
 		return sdk.ResultFromError(err)
 	}
@@ -29,9 +38,9 @@ func HandleMsgConnectionOpenInit(ctx sdk.Context, k keeper.Keeper, msg types.Msg
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-// HandleMsgConnectionOpenTry defines the sdk.Handler for MsgConnectionOpenTry
-func HandleMsgConnectionOpenTry(ctx sdk.Context, k keeper.Keeper, msg types.MsgConnectionOpenTry) sdk.Result {
-	err := k.ConnOpenTry(
+// ConnOpenTry defines the sdk.Handler for MsgConnectionOpenTry
+func (h Handler) ConnOpenTry(ctx sdk.Context, msg types.MsgConnectionOpenTry) sdk.Result {
+	err := h.k.ConnOpenTry(
 		ctx, msg.ConnectionID, msg.Counterparty, msg.ClientID,
 		msg.CounterpartyVersions, msg.ProofInit, msg.ProofHeight, msg.ConsensusHeight)
 	if err != nil {
@@ -54,9 +63,9 @@ func HandleMsgConnectionOpenTry(ctx sdk.Context, k keeper.Keeper, msg types.MsgC
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-// HandleMsgConnectionOpenAck defines the sdk.Handler for MsgConnectionOpenAck
-func HandleMsgConnectionOpenAck(ctx sdk.Context, k keeper.Keeper, msg types.MsgConnectionOpenAck) sdk.Result {
-	err := k.ConnOpenAck(
+// ConnOpenAck defines the sdk.Handler for MsgConnectionOpenAck
+func (h Handler) ConnOpenAck(ctx sdk.Context, msg types.MsgConnectionOpenAck) sdk.Result {
+	err := h.k.ConnOpenAck(
 		ctx, msg.ConnectionID, msg.Version, msg.ProofTry,
 		msg.ProofHeight, msg.ConsensusHeight,
 	)
@@ -79,9 +88,9 @@ func HandleMsgConnectionOpenAck(ctx sdk.Context, k keeper.Keeper, msg types.MsgC
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
-// HandleMsgConnectionOpenConfirm defines the sdk.Handler for MsgConnectionOpenConfirm
-func HandleMsgConnectionOpenConfirm(ctx sdk.Context, k keeper.Keeper, msg types.MsgConnectionOpenConfirm) sdk.Result {
-	err := k.ConnOpenConfirm(ctx, msg.ConnectionID, msg.ProofAck, msg.ProofHeight)
+// ConnOpenConfirm defines the sdk.Handler for MsgConnectionOpenConfirm
+func (h Handler) ConnOpenConfirm(ctx sdk.Context, msg types.MsgConnectionOpenConfirm) sdk.Result {
+	err := h.k.ConnOpenConfirm(ctx, msg.ConnectionID, msg.ProofAck, msg.ProofHeight)
 	if err != nil {
 		return sdk.ResultFromError(err)
 	}
@@ -99,4 +108,8 @@ func HandleMsgConnectionOpenConfirm(ctx sdk.Context, k keeper.Keeper, msg types.
 	})
 
 	return sdk.Result{Events: ctx.EventManager().Events()}
+}
+
+func (h Handler) QueryConnection(ctx sdk.Context, req abci.RequestQuery) ([]byte, sdk.Error) {
+	return QuerierConnection(ctx, req, h.k)
 }
