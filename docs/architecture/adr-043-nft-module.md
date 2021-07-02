@@ -65,7 +65,7 @@ message Genre {
 - `description` is a detailed description of the NFT genre; _optional_
 - `uri` is a URL pointing to an off-chain JSON file that contains metadata about this NFT genre ([OpenSea example](https://docs.opensea.io/docs/contract-level-metadata)); _optional_
 - `mint_restricted` flag, if set to true, indicates that only the genre owner can mint NFTs, otherwise anyone can do so; _required_
-- `udpate_restricted` flag, if set to true, indicates that no one can update NFTs, otherwise only NFT owners can do so; _required_
+- `update_restricted` flag, if set to true, indicates that no one can update NFTs, otherwise only NFT owners can do so; _required_
 
 #### NFT
 
@@ -82,15 +82,18 @@ message NFT {
 
 - `genre` is identifier of genre where the NFT belongs; _required_
 - `id` is an alphanumeric identifier of the NFT, unique within the scope of its genre. It is specified by the creator of the NFT and may be expanded to use DID in the future. `genre` combined with `id` uniquely identifies an NFT and is used as the primary index for storing the NFT; _required_
+
   ```
   {genre}/{id} --> NFT (bytes)
   ```
+
 - `uri` is a URL pointing to an off-chain JSON file that contains metadata about this NFT (Ref: [ERC721 standard and OpenSea extension](https://docs.opensea.io/docs/metadata-standards)).
 - `data` is a field that CAN be used by composing modules to specify additional properties for the NFT; _optional_
 
 This ADR doesn't specify values that `data` can take; however, best practices recommend upper-level NFT modules clearly specify their contents.  Although the value of this field doesn't provide the additional context required to manage NFT records, which means that the field can technically be removed from the specification, the field's existence allows basic informational/UI functionality.
 
 ### `Keeper` Interface (TODO)
+
 Other business logic implementations should be defined in composing modules that import this NFT module and use its `Keeper`.
 
 ### `Msg` Service
@@ -104,9 +107,69 @@ message MsgSend {
   string genre    = 1;
   string id       = 2;
   string sender   = 3;
-  string reveiver = 4;
+  string receiver = 4;
 }
 message MsgSendResponse {}
+```
+
+`Keeper` should expose the following interfaces for use by upper-level modules:
+
+```go
+func (k keeper) SetGenre(genre types.Genre, minter sdktype.AccAddress){
+   AssertGenreNotExist(genre.id)
+   store := sdktype.KVStore(k.storeKey)
+   store.Set(id,genre)
+}
+
+func (k keeper) GetGenre(genreID string){
+   store := sdktype.KVStore(k.storeKey)
+   bz := store.Get(genreID)
+
+   var genre types.Genre{}
+   k.cdc.MustUnMarshall(bz,&genre)
+   return genre
+}
+
+func (k keeper) MintNFT(nft types.NFT, owner sdktype.AccAddress){
+   AssertGenreExist(nft.genre)
+   AssertNFTNotExist(nft.id)
+   nftStore := k.getNFTStore(ctx,nft.genre)
+   nftStore.Set(nft.id,nft)
+
+   ownerStore := k.getOwnerStore(ctx,owner,nft.genre)
+   ownerStore.Set(nft.id,nft.id)   
+}
+
+func (k keeper) GetNFT(genre,nftID string){
+   nftStore := k.getNFTStore(ctx,genre)
+   bz := nftStore.Get(nftID)
+
+   var nft types.NFT{}
+   k.cdc.MustUnMarshall(bz,&nft)
+   return nft
+}
+
+func (k keeper) SendNFT(genre,id string,sender sdktype.AccAddress,receiver sdktype.AccAddress){
+   AssertGenreExist(genre)
+   AssertNFTNotExist(id)
+   AssertNFTOwner(sender)
+   senderStore := k.getOwnerStore(ctx,sender)
+   senderStore.Delete(id)   
+
+   receiverStore := k.getOwnerStore(ctx,receiver)
+   receiverStore.Set(nft.id,nft.id)   
+}
+
+func (k keeper) BurnNFT(genre,id string,owner sdktype.AccAddress){
+   AssertGenreExist(genre)
+   AssertNFTNotExist(id)
+   AssertNFTOwner(owner)
+   ownerStore := k.getOwnerStore(ctx,sender)
+   ownerStore.Delete(id)   
+
+   genreStore := k.getGenreStore(ctx,genre)
+   genreStore.Delete(id)
+}
 ```
 
 `MsgSend` can be used to transfer the ownership of an NFT to another address.
