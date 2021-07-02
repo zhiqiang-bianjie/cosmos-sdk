@@ -32,7 +32,7 @@ func (m msgServer) Issue(goCtx context.Context, msg *types.MsgIssue) (*types.Msg
 		return nil, err
 	}
 
-	if err := m.Keeper.Issue(ctx, msg.Metadata.Type,
+	if err := m.Keeper.IssueType(ctx, msg.Metadata.Type,
 		msg.Metadata.Name,
 		msg.Metadata.Symbol,
 		msg.Metadata.Description,
@@ -41,6 +41,10 @@ func (m msgServer) Issue(goCtx context.Context, msg *types.MsgIssue) (*types.Msg
 		issuer); err != nil {
 		return nil, err
 	}
+
+	ctx.EventManager().EmitEvent(
+		types.NewTypeIssueEvent(issuer, msg.Metadata.Type),
+	)
 	return &types.MsgIssueResponse{}, nil
 }
 
@@ -63,6 +67,10 @@ func (m msgServer) Mint(goCtx context.Context, msg *types.MsgMint) (*types.MsgMi
 		minter); err != nil {
 		return nil, err
 	}
+
+	ctx.EventManager().EmitEvent(
+		types.NewNFTMintEvent(minter, msg.NFT.Type, msg.NFT.ID),
+	)
 	return &types.MsgMintResponse{}, nil
 }
 
@@ -85,6 +93,9 @@ func (m msgServer) Edit(goCtx context.Context, msg *types.MsgEdit) (*types.MsgEd
 		editor); err != nil {
 		return nil, err
 	}
+	ctx.EventManager().EmitEvent(
+		types.NewNFTEditEvent(editor, msg.NFT.Type, msg.NFT.ID),
+	)
 	return &types.MsgEditResponse{}, nil
 }
 
@@ -107,6 +118,9 @@ func (m msgServer) Send(goCtx context.Context, msg *types.MsgSend) (*types.MsgSe
 		receiver); err != nil {
 		return nil, err
 	}
+	ctx.EventManager().EmitEvent(
+		types.NewNFTSendEvent(sender, receiver, msg.Type, msg.ID),
+	)
 	return &types.MsgSendResponse{}, nil
 }
 
@@ -123,5 +137,8 @@ func (m msgServer) Burn(goCtx context.Context, msg *types.MsgBurn) (*types.MsgBu
 		destroyer); err != nil {
 		return nil, err
 	}
+	ctx.EventManager().EmitEvent(
+		types.NewNFTBurnEvent(destroyer, msg.Type, msg.ID),
+	)
 	return &types.MsgBurnResponse{}, nil
 }

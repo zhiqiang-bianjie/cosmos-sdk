@@ -12,5 +12,6 @@ var (
 	ErrTypeNotExists     = sdkerrors.Register(ModuleName, 5, "nft type not exist")
 	ErrNFTExists         = sdkerrors.Register(ModuleName, 6, "nft already exist")
 	ErrNFTNotExists      = sdkerrors.Register(ModuleName, 7, "nft not exist")
-	ErrNFTEditRestricted = sdkerrors.Register(ModuleName, 8, "nft is defined as editing restricted")
+	ErrNFTEditRestricted = sdkerrors.Register(ModuleName, 8, "nft is defined as editing restricted,can't edit")
+	ErrNFTMintRestricted = sdkerrors.Register(ModuleName, 9, "nft is defined as mint restricted, only the creator of type can mint nft")
 )

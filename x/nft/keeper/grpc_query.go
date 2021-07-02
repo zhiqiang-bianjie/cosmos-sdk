@@ -63,7 +63,7 @@ func (k Keeper) NFTs(ctx context.Context,
 
 	balances := k.bk.GetAllBalances(sdkCtx, owner)
 	for _, b := range balances {
-		typ, id, err := types.GetTypeAndIDFrom(b.GetDenom())
+		typ, id, err := types.ParseTypeAndIDFrom(b.GetDenom())
 		if err != nil {
 			continue
 		}
@@ -137,7 +137,7 @@ func (k Keeper) Balance(ctx context.Context, request *types.QueryBalanceRequest)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	balances := k.bk.GetAllBalances(sdkCtx, owner)
 	for _, b := range balances {
-		typ, id, err := types.GetTypeAndIDFrom(b.GetDenom())
+		typ, id, err := types.ParseTypeAndIDFrom(b.GetDenom())
 		if err != nil {
 			continue
 		}

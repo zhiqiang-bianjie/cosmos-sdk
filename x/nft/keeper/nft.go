@@ -21,6 +21,15 @@ func (k Keeper) MintNFT(ctx sdk.Context,
 		return sdkerrors.Wrap(types.ErrTypeNotExists, typ)
 	}
 
+	// If the current type is defined as MintRestricted,
+	// check whether the minter of the current nft is the issuer of the type
+	if metadata.MintRestricted {
+		issuer := k.GetTypeIssuer(ctx, typ)
+		if issuer != minter.String() {
+			return sdkerrors.Wrap(types.ErrNFTMintRestricted, typ)
+		}
+	}
+
 	if k.HasNFT(ctx, typ, id) {
 		return sdkerrors.Wrap(types.ErrNFTExists, id)
 	}
@@ -35,7 +44,7 @@ func (k Keeper) MintNFT(ctx sdk.Context,
 	coin := nft.Coin()
 	bkMetadata := banktypes.Metadata{
 		Symbol:      metadata.Symbol,
-		Base:        coin.GetDenom(),
+		Base:        coin.Denom,
 		Name:        metadata.Name,
 		Description: metadata.Description,
 	}
@@ -43,10 +52,7 @@ func (k Keeper) MintNFT(ctx sdk.Context,
 	k.bk.SetDenomMetaData(ctx, bkMetadata)
 	k.bk.MintCoins(ctx, types.ModuleName, mintedCoins)
 	k.bk.SendCoinsFromModuleToAccount(ctx, types.ModuleName, minter, mintedCoins)
-
-	bz := k.cdc.MustMarshal(&nft)
-	nftStore := k.getNFTStore(ctx, nft.Type)
-	nftStore.Set(types.GetNFTIdKey(nft.ID), bz)
+	k.SetNFT(ctx, nft)
 	return nil
 }
 
@@ -68,16 +74,19 @@ func (k Keeper) EditNFT(ctx sdk.Context,
 		return sdkerrors.Wrap(types.ErrNFTEditRestricted, id)
 	}
 
+	// Determine the ownership of nft
+	nftCoin := k.bk.GetBalance(ctx, editor, types.CreateDenom(typ, id))
+	if !nftCoin.IsPositive() {
+		return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, id)
+	}
+
 	nft, has := k.GetNFT(ctx, typ, id)
 	if !has {
 		return sdkerrors.Wrap(types.ErrNFTNotExists, id)
 	}
 	nft.URI = uri
 	nft.Data = data
-
-	bz := k.cdc.MustMarshal(&nft)
-	nftStore := k.getNFTStore(ctx, nft.Type)
-	nftStore.Set(types.GetNFTIdKey(nft.ID), bz)
+	k.SetNFT(ctx, nft)
 	return nil
 }
 
@@ -122,6 +131,12 @@ func (k Keeper) BurnNFT(ctx sdk.Context,
 	return nil
 }
 
+func (k Keeper) SetNFT(ctx sdk.Context, nft types.NFT) {
+	bz := k.cdc.MustMarshal(&nft)
+	nftStore := k.getNFTStore(ctx, nft.Type)
+	nftStore.Set(types.GetNFTIdKey(nft.ID), bz)
+}
+
 func (k Keeper) GetNFT(ctx sdk.Context, typ, id string) (types.NFT, bool) {
 	store := k.getNFTStore(ctx, typ)
 	bz := store.Get(types.GetNFTIdKey(id))
@@ -131,6 +146,19 @@ func (k Keeper) GetNFT(ctx sdk.Context, typ, id string) (types.NFT, bool) {
 	var nft types.NFT
 	k.cdc.MustUnmarshal(bz, &nft)
 	return nft, true
+}
+
+func (k Keeper) GetNFTs(ctx sdk.Context, typ string) (nfts []types.NFT) {
+	store := k.getNFTStore(ctx, typ)
+	iterator := sdk.KVStorePrefixIterator(store, types.TypeKey)
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var nft types.NFT
+		k.cdc.MustUnmarshal(iterator.Value(), &nft)
+		nfts = append(nfts, nft)
+	}
+	return
 }
 
 func (k Keeper) HasNFT(ctx sdk.Context, typ, id string) bool {

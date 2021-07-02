@@ -13,7 +13,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgIssue{}, "cosmos-sdk/MsgIssue", nil)
 	cdc.RegisterConcrete(&MsgMint{}, "cosmos-sdk/MsgMint", nil)
 	cdc.RegisterConcrete(&MsgEdit{}, "cosmos-sdk/MsgEdit", nil)
-	cdc.RegisterConcrete(&MsgSend{}, "cosmos-sdk/MsgSend", nil)
+	// TODO cdc.RegisterConcrete(&MsgSend{}, "cosmos-sdk/MsgSend", nil)
 	cdc.RegisterConcrete(&MsgBurn{}, "cosmos-sdk/MsgBurn", nil)
 }
 
@@ -22,7 +22,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgIssue{},
 		&MsgMint{},
 		&MsgEdit{},
-		&MsgSend{},
+		// &MsgSend{},
 		&MsgBurn{},
 	)
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

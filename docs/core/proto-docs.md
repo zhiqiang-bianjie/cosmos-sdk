@@ -409,7 +409,7 @@
     - [NFT](#cosmos.nft.v1beta1.NFT)
   
 - [cosmos/nft/v1beta1/genesis.proto](#cosmos/nft/v1beta1/genesis.proto)
-    - [Contract](#cosmos.nft.v1beta1.Contract)
+    - [Collection](#cosmos.nft.v1beta1.Collection)
     - [GenesisState](#cosmos.nft.v1beta1.GenesisState)
   
 - [cosmos/nft/v1beta1/query.proto](#cosmos/nft/v1beta1/query.proto)
@@ -1749,15 +1749,20 @@ GenesisState defines the bank module's genesis state.
 <a name="cosmos.bank.v1beta1.DenomOwner"></a>
 
 ### DenomOwner
-
 DenomOwner defines structure representing an account that owns or holds a
 particular denominated token. It contains the account address and account
 balance of the denominated token.
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  | address defines the address that owns a particular denomination. |
 | `balance` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) |  | balance is the balance of the denominated coin for an account. |
+
+
+
+
+
 
 <a name="cosmos.bank.v1beta1.QueryAllBalancesRequest"></a>
 
@@ -5874,15 +5879,16 @@ Query provides defines the gRPC querier service.
 
 
 
-<a name="cosmos.nft.v1beta1.Contract"></a>
+<a name="cosmos.nft.v1beta1.Collection"></a>
 
-### Contract
+### Collection
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `metadata` | [Metadata](#cosmos.nft.v1beta1.Metadata) |  | metadata defines the metadata of the nft type. |
+| `issuer` | [string](#string) |  |  |
 | `nfts` | [NFT](#cosmos.nft.v1beta1.NFT) | repeated | nfts defines a array that contains all nfts of the same nft type |
 
 
@@ -5898,7 +5904,7 @@ GenesisState defines the nft module's genesis state.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `contracts` | [Contract](#cosmos.nft.v1beta1.Contract) | repeated |  |
+| `collections` | [Collection](#cosmos.nft.v1beta1.Collection) | repeated |  |
 
 
 
@@ -8863,3 +8869,4 @@ still be used for delegating and for governance votes even while locked.
 | <a name="bool" /> bool |  | bool | boolean | boolean | bool | bool | boolean | TrueClass/FalseClass |
 | <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode | string | string | string | String (UTF-8) |
 | <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str | []byte | ByteString | string | String (ASCII-8BIT) |
+
